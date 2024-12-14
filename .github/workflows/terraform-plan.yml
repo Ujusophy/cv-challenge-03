@@ -6,8 +6,8 @@ on:
       - infra_main
 
 permissions:
-  pull-requests: write 
-  contents: read  
+  pull-requests: write
+  contents: read
   
 env:
   GITHUB_API_URL: https://api.github.com 
@@ -24,7 +24,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.5.6  
+          terraform_version: 1.5.6
 
       - name: Terraform Init
         run: terraform init
@@ -39,10 +39,16 @@ jobs:
 
       - name: Post Terraform Plan to PR
         if: github.event_name == 'pull_request'
-        uses: marocchino/sticky-pull-request-comment@v2.6.1
+        uses: actions/github-script@v6
         with:
-          header: Terraform Plan
-          message: |
-            ```json
-            $(cat tfplan.json)
-            ```
+          script: |
+            const fs = require('fs');
+            const planOutput = fs.readFileSync('tfplan.json', 'utf8');
+            const body = `### Terraform Plan\n\`\`\`json\n${planOutput}\n\`\`\``;
+
+            const { data: comment } = await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.payload.pull_request.number,
+              body,
+            });
+            console.log(`Comment created at: ${comment.html_url}`);
