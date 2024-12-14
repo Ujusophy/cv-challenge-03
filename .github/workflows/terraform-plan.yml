@@ -1,30 +1,19 @@
-name: Terraform Plan
+name: Terraform Plan with Cost Estimation
 
 on:
   pull_request:
     branches:
       - infra_main
 
-permissions:
-  pull-requests: write
-  contents: read
-  
-env:
-  GITHUB_API_URL: https://api.github.com 
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-
 jobs:
-  terraform:
-    name: Run Terraform Steps
+  terraform-plan:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Setup Terraform
+      - name: Set Up Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.5.6
@@ -32,23 +21,27 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Plan
-        if: github.event_name == 'pull_request'
-        id: plan
-        run: terraform plan -out=tfplan && terraform show -json tfplan > tfplan.json
+      - name: Generate Terraform Plan
+        run: terraform plan -out=tfplan
 
-      - name: Post Terraform Plan to PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
+      - name: Show Terraform Plan Output
+        run: terraform show -json tfplan > tfplan.json
+
+      - name: Install InfraCost
+        run: npm install -g infracost
+
+      - name: Run InfraCost
+        run: infracost breakdown --path=tfplan.json --format=json > infracost.json
+
+      - name: Comment on PR with Terraform Plan and Cost Estimation
+        uses: marocchino/sticky-pull-request-comment@v2
         with:
-          script: |
-            const fs = require('fs');
-            const planOutput = fs.readFileSync('tfplan.json', 'utf8');
-            const body = `### Terraform Plan\n\`\`\`json\n${planOutput}\n\`\`\``;
+          header: "Terraform Plan and Cost Estimation"
+          message: |
+            ## Terraform Plan:
+            ```hcl
+            $(terraform show tfplan)
+            ```
 
-            const { data: comment } = await github.rest.issues.createComment({
-              ...context.repo,
-              issue_number: context.payload.pull_request.number,
-              body,
-            });
-            console.log(`Comment created at: ${comment.html_url}`);
+            ## Cost Estimation:
+            $(infracost output --path infracost.json --format table)
