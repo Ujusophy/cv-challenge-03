@@ -38,6 +38,8 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH # Add infracost to PATH
 
       - name: Run InfraCost
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
         run: infracost breakdown --path=tfplan.json --format=json > infracost.json
 
       - name: Comment on PR with Terraform Plan and Cost Estimation
