@@ -194,19 +194,8 @@ provisioner "file" {
 }
 
 provisioner "file" {
-  source      = "./ansible-setup/site.yml"
-  destination = "/tmp/site.yml"
-  connection {
-    type        = "ssh"
-    user        = "ubuntu"
-    private_key = tls_private_key.web_server_key.private_key_pem
-    host        = self.public_ip
-  }
-}
-
-provisioner "file" {
   source      = "./ansible-setup/config.yml"
-  destination = "/tmp/network.yml"
+  destination = "/tmp/config.yml"
   connection {
     type        = "ssh"
     user        = "ubuntu"
@@ -217,7 +206,7 @@ provisioner "file" {
 
 provisioner "file" {
   source      = "./ansible-setup/dash.yml"
-  destination = "/tmp/network.yml"
+  destination = "/tmp/dash.config.yml"
   connection {
     type        = "ssh"
     user        = "ubuntu"
@@ -241,7 +230,6 @@ provisioner "file" {
       "chmod 600 /tmp/private_key.pem",
       "ansible-playbook -i /tmp/inventory.ini /tmp/config.yml -vvv",
       "ansible-playbook -i /tmp/inventory.ini /tmp/monitoring.yml -vvv",
-      "ansible-playbook -i /tmp/inventory.ini /tmp/site.yml -vvv",
       "ansible-playbook -i /tmp/inventory.ini /tmp/dash.yml -vvv"
     ]
   }
