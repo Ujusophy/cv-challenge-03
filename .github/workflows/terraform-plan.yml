@@ -1,12 +1,9 @@
 name: Infra Features Pipeline
 
 on:
-  push:
-    branches:
-      - infra_features
   pull_request:
     branches:
-      - infra_features
+      - infra_main
 
 permissions:
   pull-requests: write 
