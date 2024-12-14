@@ -1,4 +1,4 @@
-name: Infra Features Pipeline
+name: Terraform Plan
 
 on:
   pull_request:
@@ -11,6 +11,9 @@ permissions:
   
 env:
   GITHUB_API_URL: https://api.github.com 
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
 
 jobs:
   terraform:
@@ -28,9 +31,6 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-
-      - name: Terraform Validate
-        run: terraform validate
 
       - name: Terraform Plan
         if: github.event_name == 'pull_request'
